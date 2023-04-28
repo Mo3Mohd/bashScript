@@ -36,3 +36,141 @@ echo "We were in $pwdBefore"
 echo "We are in $pwdAfter"
 if [ $pwdBefore == $pwdAfter ]; then
     echo -e "\nGood Bye =)\n"
+else
+    echo -e "\nTables Menu\n"
+    tableOptions=("Create Table" "List Tables" "Drop Table" "Insert Table" "Select From Table" "Select Entire Table" "Update Table" "Delete From Table" "Delete Entire Table" )
+    select opt in "${tableOptions[@]}"
+    do
+    case $opt in
+        "Create Table")
+            read -p "You choosed to create Table, Enter Table name: " tableName
+            if [ "$(find . -type f -name "${tableName}")" ]; then
+                echo "Table already exists"
+            else
+                touch $tableName
+                read -p "Enter Number Of Fields: " tableFields
+                fieldType=("int" "str")
+                fieldKey=("pk" "notPK")
+                for (( i=1; i<=$tableFields; i++ ))
+                    do
+                        if [ $i -eq 1 ];then
+                            read -p "Enter Field Name # ${i}: " fieldName
+                            echo  "${fieldName}:" >> ./${tableName}
+                            echo "Enter Field Type # ${i}: " 
+                            select opt in "${fieldType[@]}"
+                                do
+                                case $opt in
+                                    "int")
+                                    echo  "int:" >> ./${tableName}
+                                    ;;
+                                    "str")
+                                    echo  "str:" >> ./${tableName}
+                                esac
+                                break
+                                done                            
+                            echo "Enter Field Key # ${i}: "
+                            select opt in "${fieldKey[@]}"
+                                do
+                                case $opt in
+                                    "pk")
+                                    echo  "pk:" >> ./${tableName}
+                                    ;;
+                                    "notPK")
+                                    echo  "notPK:" >> ./${tableName}
+                                esac
+                                break
+                                done
+                        else
+                            read -p "Enter Field Name # ${i}: " fieldName
+                            sed -i "1s/.*/&${fieldName}:/" ./${tableName}
+                            echo "Enter Field Type # ${i}: " 
+                            select opt in "${fieldType[@]}"
+                                do
+                                case $opt in
+                                    "int")
+                                    sed -i "2s/.*/&int:/" ./${tableName}
+                                    ;;
+                                    "str")
+                                    sed -i "2s/.*/&str:/" ./${tableName}
+                                    ;;
+                                    *) echo "invalid option $REPLY";;
+                                esac
+                                break
+                                done
+                            echo "Enter Field Key # ${i}: "
+                            select opt in "${fieldKey[@]}"
+                                do
+                                case $opt in
+                                    "pk")
+                                    sed -i "3s/.*/&pk:/" ./${tableName}
+                                    ;;
+                                    "notPK")
+                                    sed -i "3s/.*/&notPK:/" ./${tableName}
+                                    ;;
+                                    *) echo "invalid option $REPLY";;
+                                esac
+                                break
+                                done          
+            fi
+                    done
+                        fi            
+            ;;
+        "List Tables")
+            ls -l .
+            ;;
+        "Drop Table")
+            read -p "You choosed to drop database, Enter database name: " tableNameDrop
+            rm ./${tableNameDrop}
+            ;;
+        "Insert Table")
+        attributes=()
+        #attributes=("id" "name" "age")
+            read -p "You choosed to insert into database, Enter table name: " tableNameInsert
+            tableFields=$(head -n 1 ${tableNameInsert} | tr ':' ' ' | wc -w)
+           # tableFields= `awk -F: '{print NF}' ${tableNameInsert}`
+            echo $tableFields
+            for (( i=1; i<=$tableFields; i++ ))
+                    do
+                        attr=$(sed -n 1p ${tableNameInsert} | cut -d':' -f${i})
+                        attributes+=("${attr}")
+                    done
+            echo "A"
+            echo "${attributes[@]}"                    
+            echo "Z"
+            echo "Enter Column Number To Insert Into: " 
+            #echo -e "\n" >> ./${tableNameInsert}
+            for(( i=0; i<$tableFields; i++ ))
+                do
+                select opt in "${attributes[@]}"
+                do
+                    case $opt in
+                    "${attributes[i]}")
+                        if [ $i -eq 0 ]; then
+                        while true; do
+                            read -p "Enter ${attributes[i]} Value: " value
+                            if [[ $value =~ ^[0-9]+$ ]]; then
+
+                                recordExist=$(awk -F: '{print $0}' $tableNameInsert | grep $value)
+                                if [ "$recordExist" ] ; then
+                                    echo "This Primary Key Already Exist"
+                                else 
+                                    echo -n "${value}:" >> ./${tableNameInsert}
+                                    break
+                                fi 
+                            else
+                                echo "Your Id Must Have Only Digits"
+                            fi
+                        done                      
+                        else      
+                      read -p "Enter ${attributes[i]} Value: " value
+                      echo -n "${value}:" >> ./${tableNameInsert}
+                        fi
+                        break
+                        ;;
+                    *) echo "Invalid option" ;;
+                    esac
+                done
+                done
+                #echo -e "\n" >> ./${tableNameInsert}
+                echo "You have Inserted New Record =) "
+            ;;
