@@ -174,3 +174,72 @@ else
                 #echo -e "\n" >> ./${tableNameInsert}
                 echo "You have Inserted New Record =) "
             ;;
+			 "Select From Table")       
+            read -p "You choosed to Select From Table, Enter Table name: " tableName
+            read -p "Enter Id To Search By: " id
+            #awk '{print $0}' $tableName
+            head -n 1 $tableName
+            awk -F: '{print $0}' $tableName | grep $id           
+            ;;
+        "Select Entire Table")        
+            read -p "You choosed to Select Entire Table, Enter Table name: " tableName
+            awk '{print $0}' $tableName        
+            ;;
+        "Update Table")
+            read -p "You choosed to Update Table, Enter Table name: " tableNameUpdate
+            read -p "Enter Id To Search By & Update: " id
+            record=$(awk -F: '{print $0}' $tableNameUpdate | grep $id)
+            sed -i "/$id/d" $tableNameUpdate
+            IFS=':' read -ra recordList <<< "$record"
+            for i in "${recordList[@]}"; do
+                echo "$i"
+            done
+            echo $record
+            attributes=()
+            tableFields=$(head -n 1 ${tableNameUpdate} | tr ':' ' ' | wc -w)
+            echo $tableFields
+            for (( i=2; i<=$tableFields; i++ ))
+                    do
+                        attr=$(sed -n 1p ${tableNameUpdate} | cut -d':' -f${i})
+                        attributes+=("${attr}")
+                    done
+            echo "${attributes[@]}"             
+            echo "Enter Column Number To Update: " 
+            for(( i=0; i<$tableFields-1; i++ ))
+                do
+                select opt in "${attributes[@]}"
+                do
+                    case $opt in
+                    "${attributes[i]}")
+                      read -p "Enter ${attributes[i]} Value: " value
+                      #echo "New Value Of ${attributes[i]} is ${value}"
+                      recordList[i+1]=$value
+                      echo ${recordList[i+1]}
+                      #echo -n "${value}:" >> ./${tableNameInsert}
+                        break
+                        ;;
+                    *) echo "Invalid option" ;;
+                    esac
+                done
+                done
+                echo "${recordList[@]}"    
+                recordStr=$(echo "${recordList[*]}" | tr ' ' ':')
+                echo $recordStr
+                echo "${recordStr}" >> ./${tableNameUpdate}           
+                echo "You have Updated Your Record =) "       
+            ;;
+        "Delete From Table")
+            read -p "You choosed to Delete From Table, Enter Table name: " tableName
+            read -p "Enter Id To Search By & Delete: " id
+            sed -i "/$id/d" $tableName
+            break
+            ;;
+        "Delete Entire Table")
+            read -p "You choosed to Delete Entire Table, Enter Table name: " tableName
+            head -n 3 $tableName > temp && mv temp $tableName
+            break
+            ;;
+        *) echo "invalid option $REPLY";;
+    esac    
+done 
+fi
