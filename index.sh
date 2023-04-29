@@ -37,7 +37,7 @@ echo "We are in $pwdAfter"
 if [ $pwdBefore == $pwdAfter ]; then
     echo -e "\nGood Bye =)\n"
 else
-    echo -e "\nTables Menu\n"
+    echo -e "\nLets Start Our Damn Journey\n"
     tableOptions=("Create Table" "List Tables" "Drop Table" "Insert Table" "Select From Table" "Select Entire Table" "Update Table" "Delete From Table" "Delete Entire Table" )
     select opt in "${tableOptions[@]}"
     do
@@ -56,16 +56,22 @@ else
                         if [ $i -eq 1 ];then
                             read -p "Enter Field Name # ${i}: " fieldName
                             echo  "${fieldName}:" >> ./${tableName}
-                            echo "Enter Field Type # ${i}: " 
+                            echo "Enter Field Type # ${i}: "
+                            while true;
+                                    do 
                             select opt in "${fieldType[@]}"
                                 do
-                                case $opt in
-                                    "int")
-                                    echo  "int:" >> ./${tableName}
-                                    ;;
-                                    "str")
-                                    echo  "str:" >> ./${tableName}
-                                esac
+                                
+                                        case $opt in
+                                            "int")
+                                            echo  "int:" >> ./${tableName}
+                                            break
+                                            ;;
+                                            *)
+                                            echo "Cant Be Str"
+                                            esac
+                                    done
+                                
                                 break
                                 done                            
                             echo "Enter Field Key # ${i}: "
@@ -139,6 +145,7 @@ else
             echo "Z"
             echo "Enter Column Number To Insert Into: " 
             #echo -e "\n" >> ./${tableNameInsert}
+             echo -e -n "\n" >> ./${tableNameInsert}
             for(( i=0; i<$tableFields; i++ ))
                 do
                 select opt in "${attributes[@]}"
@@ -150,7 +157,7 @@ else
                             read -p "Enter ${attributes[i]} Value: " value
                             if [[ $value =~ ^[0-9]+$ ]]; then
 
-                                recordExist=$(awk -F: '{print $0}' $tableNameInsert | grep $value)
+                                recordExist=$(awk -F: '{print $1}' $tableNameInsert | grep $value)
                                 if [ "$recordExist" ] ; then
                                     echo "This Primary Key Already Exist"
                                 else 
@@ -162,19 +169,42 @@ else
                             fi
                         done                      
                         else      
-                      read -p "Enter ${attributes[i]} Value: " value
-                      echo -n "${value}:" >> ./${tableNameInsert}
+                        while true; do
+
+                            read -p "Enter ${attributes[i]} Value: " value
+                            valueType=$(sed -n 2p ${tableNameInsert} | cut -d':' -f$((i+1)))
+                            echo $valueType
+                            if [ "$valueType" == "int" ];then
+                                    if [[ $value =~ ^[0-9]+$ ]]; then
+                                        echo -n "${value}:" >> ./${tableNameInsert}
+                                        break
+                                    else 
+                                        echo "Invalid FieldType"
+                                    fi
+                            else 
+                                    if [[ $value =~ ^[a-zA-Z]+$ ]]; then
+                                        echo -n "${value}:" >> ./${tableNameInsert}
+                                        break
+                                    else 
+                                        echo -n "Invalid FieldType"
+                                    fi
+                                   
+                            fi
+                        done
+                       #echo -n "${value}:" >> ./${tableNameInsert}
                         fi
                         break
-                        ;;
-                    *) echo "Invalid option" ;;
+                        
                     esac
                 done
+
                 done
+#                echo -e -E "\n" >> ./${tableNameInsert}
+
                 #echo -e "\n" >> ./${tableNameInsert}
                 echo "You have Inserted New Record =) "
             ;;
-			 "Select From Table")       
+        "Select From Table")       
             read -p "You choosed to Select From Table, Enter Table name: " tableName
             read -p "Enter Id To Search By: " id
             #awk '{print $0}' $tableName
@@ -183,50 +213,63 @@ else
             ;;
         "Select Entire Table")        
             read -p "You choosed to Select Entire Table, Enter Table name: " tableName
+           # tail -n +4 $tableName
             awk '{print $0}' $tableName        
             ;;
         "Update Table")
             read -p "You choosed to Update Table, Enter Table name: " tableNameUpdate
+            while true; do
+                
             read -p "Enter Id To Search By & Update: " id
             record=$(awk -F: '{print $0}' $tableNameUpdate | grep $id)
-            sed -i "/$id/d" $tableNameUpdate
-            IFS=':' read -ra recordList <<< "$record"
-            for i in "${recordList[@]}"; do
-                echo "$i"
-            done
-            echo $record
-            attributes=()
-            tableFields=$(head -n 1 ${tableNameUpdate} | tr ':' ' ' | wc -w)
-            echo $tableFields
-            for (( i=2; i<=$tableFields; i++ ))
+            if ! [ "$record" ] ; then
+                    echo "This Record Doesnt Exist"
+            else 
+
+                
+
+                echo " The Record is ${record}"
+                sed -i "/$id/d" $tableNameUpdate
+                IFS=':' read -ra recordList <<< "$record"
+                for i in "${recordList[@]}"; do
+                    echo "$i"
+                done
+                echo $record
+                attributes=()
+                tableFields=$(head -n 1 ${tableNameUpdate} | tr ':' ' ' | wc -w)
+                echo $tableFields
+                for (( i=2; i<=$tableFields; i++ ))
+                        do
+                            attr=$(sed -n 1p ${tableNameUpdate} | cut -d':' -f${i})
+                            attributes+=("${attr}")
+                        done
+                echo "${attributes[@]}"             
+                echo "Enter Column Number To Update: " 
+                for(( i=0; i<$tableFields-1; i++ ))
                     do
-                        attr=$(sed -n 1p ${tableNameUpdate} | cut -d':' -f${i})
-                        attributes+=("${attr}")
+                    select opt in "${attributes[@]}"
+                    do
+                        case $opt in
+                        "${attributes[i]}")
+                        read -p "Enter ${attributes[i]} Value: " value
+                        #echo "New Value Of ${attributes[i]} is ${value}"
+                        recordList[i+1]=$value
+                        echo ${recordList[i+1]}
+                        #echo -n "${value}:" >> ./${tableNameInsert}
+                            break
+                            ;;
+                        *) echo "Invalid option" ;;
+                        esac
                     done
-            echo "${attributes[@]}"             
-            echo "Enter Column Number To Update: " 
-            for(( i=0; i<$tableFields-1; i++ ))
-                do
-                select opt in "${attributes[@]}"
-                do
-                    case $opt in
-                    "${attributes[i]}")
-                      read -p "Enter ${attributes[i]} Value: " value
-                      #echo "New Value Of ${attributes[i]} is ${value}"
-                      recordList[i+1]=$value
-                      echo ${recordList[i+1]}
-                      #echo -n "${value}:" >> ./${tableNameInsert}
-                        break
-                        ;;
-                    *) echo "Invalid option" ;;
-                    esac
-                done
-                done
-                echo "${recordList[@]}"    
-                recordStr=$(echo "${recordList[*]}" | tr ' ' ':')
-                echo $recordStr
-                echo "${recordStr}" >> ./${tableNameUpdate}           
-                echo "You have Updated Your Record =) "       
+                    done
+                    echo "${recordList[@]}"    
+                    recordStr=$(echo "${recordList[*]}" | tr ' ' ':')
+                    echo $recordStr
+                    echo "${recordStr}" >> ./${tableNameUpdate}           
+                    echo "You have Updated Your Record =) "       
+                    break
+            fi
+            done
             ;;
         "Delete From Table")
             read -p "You choosed to Delete From Table, Enter Table name: " tableName
