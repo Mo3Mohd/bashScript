@@ -209,7 +209,7 @@ else
             read -p "Enter Id To Search By: " id
             #awk '{print $0}' $tableName
             head -n 1 $tableName
-            awk -F: '{print $0}' $tableName | grep $id           
+            awk -F: '{print $1}' $tableName | grep $id           
             ;;
         "Select Entire Table")        
             read -p "You choosed to Select Entire Table, Enter Table name: " tableName
